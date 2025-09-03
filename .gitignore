@@ -1,0 +1,41 @@
+# Build and install folders
+build/
+install/
+log/
+
+# ROS 2 Python caches
+*.pyc
+__pycache__/
+
+# Gazebo and simulation
+*.db           # Ignition/Gazebo database files
+*.log          # Gazebo logs
+/.gazebo        # local Gazebo configs
+
+# Editor and OS files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+.DS_Store
+Thumbs.db
+
+# Colcon metadata
+.colcon_default_config.yaml
+
+# CMake and Make files
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+
+# Python virtual environments
+venv/
+env/
+
+# ROS 2 bag files
+*.bag
+*.bag.active
+
+# Misc
+*.swp   # vim swap files
