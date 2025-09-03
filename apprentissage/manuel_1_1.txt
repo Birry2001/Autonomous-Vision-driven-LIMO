@@ -1,0 +1,211 @@
+Parfait ! Voilà un **manuel reproductible** — du clonage des dépôts jusqu’à l’**affichage du robot LIMO dans Gazebo Sim (GZ/Harmonic)** avec ROS 2 **Jazzy**. Tu peux le garder tel quel et rejouer chaque étape sur une machine propre.
+
+---
+
+# Manuel — LIMO sur Gazebo (GZ/Harmonic) avec ROS 2 Jazzy
+
+## 0) Pré-requis (une seule fois)
+
+```bash
+sudo apt update
+# Colle ROS 2 ↔ GZ, outils URDF
+sudo apt install -y ros-jazzy-ros-gz ros-jazzy-ros-gz-sim \
+                   ros-jazzy-robot-state-publisher ros-jazzy-xacro
+# (optionnel) outils CLI GZ
+sudo apt install -y gz-sim8
+```
+
+---
+
+## 1) Créer le workspace et cloner les dépôts
+
+```bash
+# Ton workspace (adapte le chemin si besoin)
+mkdir -p ~/projet_limo_autonome/Autonomous-Vision-driven-LIMO/src
+cd ~/projet_limo_autonome/Autonomous-Vision-driven-LIMO/src
+
+# Dépôt principal du projet
+git clone https://github.com/Birry2001/Autonomous-Vision-driven-LIMO
+
+# Dépôt du robot AgileX (dans ce même src/)
+git clone https://github.com/agilexrobotics/limo_ros2.git
+```
+
+---
+
+## 2) (Fix rapide CMake) empêcher l’erreur “log/ not found” de `limo_car`
+
+**Option A (rapide)** : créer le dossier attendu.
+
+```bash
+mkdir -p ~/projet_limo_autonome/Autonomous-Vision-driven-LIMO/src/limo_ros2/limo_car/log
+```
+
+**Option B (propre)** : rendre l’install CMake robuste (facultatif).
+
+* Édite `src/limo_ros2/limo_car/CMakeLists.txt` et remplace tout `install(DIRECTORY …)` par :
+
+```cmake
+# Remplace un bloc unique d'install(DIRECTORY ...) par ceci :
+set(INSTALL_DIRS launch gazebo meshes rviz urdf worlds config log)
+foreach(dir ${INSTALL_DIRS})
+  if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${dir}")
+    install(DIRECTORY ${dir}/ DESTINATION share/${PROJECT_NAME}/${dir})
+  endif()
+endforeach()
+```
+
+---
+
+## 3) Build des paquets utiles (description + modèle)
+
+```bash
+cd ~/projet_limo_autonome/Autonomous-Vision-driven-LIMO
+colcon build --packages-select limo_description limo_car
+source install/setup.bash
+```
+
+---
+
+## 4) (Optionnel) Définir des matériaux URDF pour enlever les warnings
+
+Ajoute **à l’intérieur de `<robot ...>`** (par ex. dans `src/limo_ros2/limo_description/urdf/limo_xacro.xacro`) :
+
+```xml
+<material name="laser_material"><color rgba="0.2 0.7 1.0 1.0"/></material>
+<material name="depth_camera_material"><color rgba="0.3 0.3 0.3 1.0"/></material>
+<material name="imu_material"><color rgba="0.9 0.5 0.1 1.0"/></material>
+```
+
+*(Sinon, ce ne sont que des avertissements inoffensifs.)*
+
+---
+
+## 5) Créer une **version GZ** du Xacro (sans plugins Classic + meshes résolus)
+
+Les fichiers `.gazebo` et plugins `libgazebo_ros_*` sont pour **Gazebo Classic**. On fabrique une variante **spéciale GZ**.
+
+```bash
+cd ~/projet_limo_autonome/Autonomous-Vision-driven-LIMO/src/limo_ros2/limo_description/urdf
+
+# 5.1 Copier le modèle Ackermann
+cp limo_ackerman.xacro limo_ackerman_gz.xacro
+
+# 5.2 Retirer toute inclusion de fichiers .gazebo (plugins Classic)
+sed -i '/\.gazebo/d' limo_ackerman_gz.xacro
+
+# 5.3 Forcer des chemins de mesh absolus que GZ sait toujours trouver
+PKG=$(ros2 pkg prefix limo_description)
+sed -i "s#model://limo_description/meshes/#file://${PKG}/share/limo_description/meshes/#g" limo_ackerman_gz.xacro
+sed -i "s#package://limo_description/meshes/#file://${PKG}/share/limo_description/meshes/#g" limo_ackerman_gz.xacro
+sed -i "s#file://\\\$(find limo_description)/meshes/#file://${PKG}/share/limo_description/meshes/#g" limo_ackerman_gz.xacro
+```
+
+> Résultat : un Xacro **sans** plugins Classic et avec des meshes **résolubles** par GZ.
+
+---
+
+## 6) Lancer Gazebo Sim (GZ) — monde `empty`
+
+Dans un **Terminal A** (laisse ouvert) :
+
+```bash
+# Partition commune pour que tous les outils se "voient"
+export GZ_PARTITION=ros_limo
+
+# Aide GZ à trouver tes ressources locales (facultatif mais utile)
+cd ~/projet_limo_autonome/Autonomous-Vision-driven-LIMO
+export GZ_SIM_RESOURCE_PATH=$GZ_SIM_RESOURCE_PATH:$(pwd)/src/limo_ros2/limo_description:$(pwd)/src/limo_ros2/limo_car
+
+# Lancer GZ sur un monde connu
+ros2 launch ros_gz_sim gz_sim.launch.py gz_args:='-r -v 4 empty.sdf'
+```
+
+---
+
+## 7) Générer l’URDF et **spawner** le robot
+
+Dans un **Terminal B** (nouveau, mêmes exports que ci-dessus) :
+
+```bash
+export GZ_PARTITION=ros_limo
+cd ~/projet_limo_autonome/Autonomous-Vision-driven-LIMO
+export GZ_SIM_RESOURCE_PATH=$GZ_SIM_RESOURCE_PATH:$(pwd)/src/limo_ros2/limo_description:$(pwd)/src/limo_ros2/limo_car
+
+# 7.1 Générer l’URDF depuis le Xacro "GZ"
+xacro src/limo_ros2/limo_description/urdf/limo_ackerman_gz.xacro > /tmp/limo_gz.urdf
+
+# 7.2 Spawner dans le monde "empty"
+ros2 run ros_gz_sim create \
+  -world empty \
+  -name limo \
+  -allow_renaming true \
+  -file /tmp/limo_gz.urdf \
+  -x 0 -y 0 -z 0.2
+```
+
+Tu dois voir dans la console GZ des lignes du type **“Created entity … named \[limo]”** et le robot apparaît.
+
+---
+
+## 8) Dépannage express (si besoin)
+
+* **“Entity named \[limo] already exists”** → soit supprime l’entité via la GUI (clic droit → Remove), soit garde `-allow_renaming true`.
+* **Meshes introuvables / robot invisible** → vérifie l’étape **5.3** (URIs `file://.../share/limo_description/meshes/`) **et** l’export de `GZ_SIM_RESOURCE_PATH`.
+* **`create` attend `/world/.../create`** → utilise **le même `GZ_PARTITION`** dans tous les terminaux **et** le bon `-world empty`.
+* **Warnings “material undefined”** → voir **§4** (facultatif).
+
+---
+
+### Et après ?
+
+Pour **le faire bouger** : ajoute dans le modèle un plugin **GZ** de conduite (Ackermann ou DiffDrive), puis **bridge** les topics GZ↔ROS pour utiliser `/cmd_vel`.
+Je peux te fournir un bloc `<plugin>` prêt à coller + la commande `ros_gz_bridge` dès que tu veux passer au mouvement.
+
+---
+
+## TL;DR (checklist commandes)
+
+```bash
+# Pré-requis
+sudo apt install -y ros-jazzy-ros-gz ros-jazzy-ros-gz-sim ros-jazzy-robot-state-publisher ros-jazzy-xacro gz-sim8
+
+# Clonage
+cd ~/projet_limo_autonome/Autonomous-Vision-driven-LIMO/src
+git clone https://github.com/Birry2001/Autonomous-Vision-driven-LIMO
+git clone https://github.com/agilexrobotics/limo_ros2.git
+
+# Fix CMake (si besoin)
+mkdir -p ~/projet_limo_autonome/Autonomous-Vision-driven-LIMO/src/limo_ros2/limo_car/log
+
+# Build
+cd ~/projet_limo_autonome/Autonomous-Vision-driven-LIMO
+colcon build --packages-select limo_description limo_car
+source install/setup.bash
+
+# Variante GZ du Xacro
+cd src/limo_ros2/limo_description/urdf
+cp limo_ackerman.xacro limo_ackerman_gz.xacro
+sed -i '/\.gazebo/d' limo_ackerman_gz.xacro
+PKG=$(ros2 pkg prefix limo_description)
+sed -i "s#model://limo_description/meshes/#file://${PKG}/share/limo_description/meshes/#g" limo_ackerman_gz.xacro
+sed -i "s#package://limo_description/meshes/#file://${PKG}/share/limo_description/meshes/#g" limo_ackerman_gz.xacro
+sed -i "s#file://\\\$(find limo_description)/meshes/#file://${PKG}/share/limo_description/meshes/#g" limo_ackerman_gz.xacro
+
+# Lancer GZ (Terminal A)
+export GZ_PARTITION=ros_limo
+cd ~/projet_limo_autonome/Autonomous-Vision-driven-LIMO
+export GZ_SIM_RESOURCE_PATH=$GZ_SIM_RESOURCE_PATH:$(pwd)/src/limo_ros2/limo_description:$(pwd)/src/limo_ros2/limo_car
+ros2 launch ros_gz_sim gz_sim.launch.py gz_args:='-r -v 4 empty.sdf'
+
+# Spawn (Terminal B)
+export GZ_PARTITION=ros_limo
+cd ~/projet_limo_autonome/Autonomous-Vision-driven-LIMO
+export GZ_SIM_RESOURCE_PATH=$GZ_SIM_RESOURCE_PATH:$(pwd)/src/limo_ros2/limo_description:$(pwd)/src/limo_ros2/limo_car
+xacro src/limo_ros2/limo_description/urdf/limo_ackerman_gz.xacro > /tmp/limo_gz.urdf
+ros2 run ros_gz_sim create -world empty -name limo -allow_renaming true -file /tmp/limo_gz.urdf -x 0 -y 0 -z 0.2
+```
+
+Tu peux t’arrêter ici pour **l’affichage**.
+Dis-moi quand tu veux la **suite** (plugin GZ de conduite + bridge ROS) et je te fournis un patch prêt à coller pour piloter le LIMO au `/cmd_vel`.
+
