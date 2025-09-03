@@ -1,6 +1,6 @@
 # Autonomous Vision driven LIMO
 
-**Autonomous Vision driven LIMO** is a research project focused on developing an end-to-end autonomous navigation system for the LIMO Pro robot. Leveraging state-of-the-art concepts in robotics and artificial intelligence, the project explores:
+**Autonomous Vision driven LIMO** is a research project focused on developing an end-to-end autonomous navigation system for the LIMO Pro robot ( https://github.com/agilexrobotics/limo_ros2 ). Leveraging state-of-the-art concepts in robotics and artificial intelligence, the project explores:
 
 * **Deep Learning for Perception** : real-time obstacle detection and scene understanding using convolutional neural networks.
 * **Sensor Fusion** : combining LiDAR, odometry, and camera data with Extended Kalman Filters or particle filters to achieve robust state estimation.
