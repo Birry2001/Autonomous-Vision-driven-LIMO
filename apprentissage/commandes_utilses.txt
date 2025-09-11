@@ -1,0 +1,23 @@
+/home/nochi/test_ws/Evaluation_SLAM_KITWARE/Tests_tout_Pavin/plan_tour_pavin_test_1.yaml
+
+ros2 bag filter \
+  -i /home/nochi/STAGE_M1_NOCHI/tour_pavin_haut_2025_04_18_c \
+  -o /home/nochi/STAGE_M1_NOCHI/tour_pavin_filtree \
+  --storage mcap \
+  -e "topic != '/slam_odom'"
+
+
+
+mcap filter --exclude /slam_odom \
+  /home/nochi/STAGE_M1_NOCHI/tour_pavin_haut_2025_04_18_c/tour_pavin_haut_2025_04_18_c_0.mcap \
+  /home/nochi/STAGE_M1_NOCHI/tour_pavin_filtree/tour_pavin_filtree.mcap
+
+
+cat > /home/nochi/tour_pavin_sqlite.yaml <<'YAML'
+output_bags:
+  - uri: /home/nochi/STAGE_M1_NOCHI/tour_pavin_sqlite3
+    storage_id: sqlite3
+    all_topics: true
+    exclude_topics: [/slam_odom]
+YAML
+
