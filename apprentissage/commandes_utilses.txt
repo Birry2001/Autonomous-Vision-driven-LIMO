@@ -21,3 +21,18 @@ output_bags:
     exclude_topics: [/slam_odom]
 YAML
 
+
+
+
+python3 analyse_impacts.py /home/nochi/test_ws/Evaluation_SLAM_KITWARE/depot_git/resultats/indoor/dirs/INDOOR_nouv.txt \
+  --out /home/nochi/test_ws/Evaluation_SLAM_KITWARE/INDOOR_nouv/Impact_resultats/impacts_consolides.xlsx
+
+
+./analyse_impacts.py /home/nochi/test_ws/Evaluation_SLAM_KITWARE/depot_git/resultats/indoor/dirs/INDOOR_nouv.txt \
+  --out /home/nochi/test_ws/Evaluation_SLAM_KITWARE/INDOOR_nouv/Impact_resultats/impacts_consolides.xlsx
+  
+  
+  
+
+./viz_all.py /home/nochi/test_ws/Evaluation_SLAM_KITWARE/viz_all_test_indoor.yaml
+
