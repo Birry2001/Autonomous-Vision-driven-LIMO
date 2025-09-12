@@ -1,0 +1,29 @@
+version: "3.9"
+services:
+  limo-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        USERNAME: "${USER:-dev}"
+        USER_UID: "${UID:-1000}"
+        USER_GID: "${GID:-1000}"
+    container_name: limo-dev
+    # Monte ton repo dans /workspaces/Autonomous-Vision-driven-LIMO
+    volumes:
+      - ./:/workspaces/Autonomous-Vision-driven-LIMO:rw
+      # X11 (Linux)
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+    environment:
+      - DISPLAY=${DISPLAY}            # X11
+      - QT_X11_NO_MITSHM=1
+      - ROS_DOMAIN_ID=0
+      # Accès aux meshes de ton dépôt
+      - GZ_SIM_RESOURCE_PATH=/workspaces/Autonomous-Vision-driven-LIMO/src/limo_ros2/limo_description:/workspaces/Autonomous-Vision-driven-LIMO/src/limo_ros2/limo_car
+    # Pour Wayland, ajoute: - WAYLAND_DISPLAY, et monte /run/user/1000/wayland-0
+    # GPU NVIDIA (si dispo): décommente la ligne suivante + installe nvidia-container-toolkit côté hôte
+    # deploy: { resources: { reservations: { devices: [ { capabilities: [gpu] } ] } } }
+    runtime: nvidia
+    network_mode: host          # pratique pour ROS 2 local
+    stdin_open: true
+    tty: true
