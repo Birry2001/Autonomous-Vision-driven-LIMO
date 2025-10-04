@@ -36,4 +36,9 @@ andere Sensoren zusammengebaut werden und laden sie das Modell in Gazebo.-->
         <parent link="base_link"/>
         <child link="imu_link"/>
     </joint>
+
+
+
+
+
 </robot>

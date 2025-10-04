@@ -1,0 +1,19 @@
+xacro /home/nochi-billy/NOCHI/Projets_Robotique/limo_ws/src/Autonomous-Vision-driven-LIMO/src/limo_ros2/limo_car/gazebo/ackermann_with_sensor.xacro > /home/nochi-billy/NOCHI/Projets_Robotique/limo_ws/src/Autonomous-Vision-driven-LIMO/src/limo_project/robot_description/limo.sdf
+
+
+gz sdf -p /home/nochi-billy/NOCHI/Projets_Robotique/limo_ws/src/Autonomous-Vision-driven-LIMO/src/limo_project/robot_description/limo.urdf > /home/nochi-billy/NOCHI/Projets_Robotique/limo_ws/src/Autonomous-Vision-driven-LIMO/src/limo_project/robot_description/limo.sdf
+
+
+xacro -o /home/nochi-billy/NOCHI/Projets_Robotique/limo_ws/src/Autonomous-Vision-driven-LIMO/src/limo_project/robot_description/limo.urdf /home/nochi-billy/NOCHI/Projets_Robotique/limo_ws/src/Autonomous-Vision-driven-LIMO/src/limo_ros2/limo_car/gazebo/ackermann_with_sensor.xacro
+
+
+
+*******************************************
+Spawner le robot
+****************************************
+ros2 run ros_gz_sim create -world default \
+  -file /home/nochi-billy/NOCHI/Projets_Robotique/limo_ws/src/Autonomous-Vision-driven-LIMO/src/limo_project/limo_ackermann/model.sdf \
+  -name limo -x 0 -y 0 -z 0.2
+
+
+

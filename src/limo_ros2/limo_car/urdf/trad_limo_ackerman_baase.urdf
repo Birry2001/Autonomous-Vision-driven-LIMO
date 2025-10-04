@@ -1,0 +1,185 @@
+<?xml version="1.0"?>
+<!-- Auteur : Zhui Li -->
+<!-- Description : Ce fichier xacro est basé sur des règles et définit des fonctions via xacro,
+afin de permettre la création de la structure globale du véhicule de type Ackermann.
+La construction de certaines de ces structures est effectuée dans des fichiers externes.-->
+
+<robot name="limo_ackerman" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <!-- associé à d'autres modèles fournis -->
+    <xacro:arg name="robot_namespace" default="/" />
+    <xacro:include filename="$(find limo_car)/urdf/limo_anteil.xacro" />
+    <xacro:include filename="$(find limo_car)/urdf/limo_steering_hinge.xacro" />
+
+    <!-- définit des valeurs -->
+    <xacro:property name="M_PI" value="3.14159"/>
+
+    <xacro:property name="base_mass" value="2.1557"/>
+    <xacro:property name="base_x_size" value="0.13" />
+    <xacro:property name="base_y_size" value="0.12" />
+    <xacro:property name="base_z_size" value="0.10" />
+<!--    <xacro:property name="base_x_size" value="0.19" />-->
+<!--    <xacro:property name="base_y_size" value="0.31" />-->
+<!--    <xacro:property name="base_z_size" value="0.12" />-->
+
+
+
+    <xacro:property name="wheelbase" value="0.2"/>
+    <xacro:property name="track" value="0.14"/>
+    <xacro:property name="wheel_vertical_offset" value="-0.100998" />
+
+
+    <xacro:property name="wheel_mass" value="0.5" />
+    <xacro:property name="wheel_length" value="0.045" />
+    <xacro:property name="wheel_radius" value="0.045" />
+
+    <!-- définir la macro-fonction pour le calcul des matrices du moment d'inertie -->
+    <!-- Sphère -->
+    <xacro:macro name="sphere_inertial_matrix" params="m r">
+        <inertial>
+            <origin xyz="0.0 0.0 0.0" />
+            <mass value="${m}" />
+            <inertia ixx="${2*m*r*r/5}" ixy="0" ixz="0"
+                     iyy="${2*m*r*r/5}" iyz="0"
+                     izz="${2*m*r*r/5}" />
+        </inertial>
+    </xacro:macro>
+    <!-- Cylindre -->
+    <xacro:macro name="cylinder_inertial_matrix" params="m r h">
+        <inertial>
+            <origin xyz="0.0 0.0 0.0" />
+            <mass value="${m}" />
+            <inertia ixx="${m*(3*r*r+h*h)/12}" ixy = "0" ixz = "0"
+                     iyy="${m*(3*r*r+h*h)/12}" iyz = "0"
+                     izz="${m*r*r/2}" />
+        </inertial>
+    </xacro:macro>
+    <!-- Boîte (parallélépipède) -->
+    <xacro:macro name="box_inertial_matrix" params="m w l h">
+        <inertial>
+            <origin xyz="0.0 0.0 0.0" />
+            <mass value="${m}" />
+            <inertia ixx="${m*(w*w+h*h)/12}" ixy = "0" ixz = "0"
+                     iyy="${m*(h*h+l*l)/12}" iyz = "0"
+                     izz="${m*(w*w+l*l)/12}" />
+        </inertial>
+    </xacro:macro>
+
+
+
+    <!-- -->
+    <!-- définit un point zéro pour construire le modèle. Cela facilite la mise en place de la position d'affichage dans l'environnement de simulation -->
+    <link name="base_footprint"/>
+
+    <joint name="base_joint" type="fixed">
+        <parent link="base_footprint"/>
+        <child link="base_link"/>
+        <origin xyz="0.0 0.0 0.15" rpy="0 0 0"/>
+    </joint>
+
+    <!-- crée base_link comme carrosserie -->
+    <link name="base_link">
+        <visual>
+            <origin xyz="0 0 -0.15" rpy="0 0 1.57" />
+            <geometry>
+                <mesh filename="model://limo_ackermann/meshes/limo_base.dae" scale="1 1 1"/>
+            </geometry>
+        </visual>
+        <!-- Modèle utilisé pour simuler la collision physique. -->
+        <collision>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <box size="${base_x_size} ${base_y_size} ${base_z_size}"/>
+            </geometry>
+        </collision>
+        <xacro:box_inertial_matrix  m="${base_mass}" w="${base_x_size}" l="${base_y_size}" h="${base_z_size}" />
+    </link>
+
+<!--    &lt;!&ndash; calcule le moment d'inertie avec une macro-fonction &ndash;&gt;-->
+<!--    <link name="inertial_link">-->
+<!--        <inertial>-->
+<!--            <origin xyz="0.0 0.0 0.0" />-->
+<!--            <mass value="${base_mass}" />-->
+<!--            -->
+<!--            <inertia ixx="0.24" ixy="0" ixz="0"-->
+<!--                     iyy="0.96" iyz="0"-->
+<!--                     izz="0.96" />-->
+<!--        </inertial>-->
+<!--    </link>-->
+<!--    &lt;!&ndash; relie le lien du moment d'inertie et le modèle &ndash;&gt;-->
+<!--    <joint name="inertial_joint" type="fixed">-->
+<!--        <origin xyz="0 0 0" rpy="0 0 0" />-->
+<!--        <parent link="base_link" />-->
+<!--        <child link="inertial_link" />-->
+<!--    </joint>-->
+
+    <!--  Deux roues arrière sont créées à partir d’un modèle externe et reliées au corps -->
+    <link name="hinten_left_wheel_link">
+        <!--        <inertial>-->
+        <!--            <origin xyz="0 0 0" />-->
+        <!--            <mass value="0.5" />-->
+        <!--            <inertia ixx="0.01055" ixy="0" ixz="0" iyy="0.00075" iyz="0" izz="0.01055" /> -->
+        <!--        </inertial>-->
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <mesh filename="model://limo_ackermann/meshes/limo_wheel.dae" />
+            </geometry>
+        </visual>
+        <collision>
+            <origin xyz="0 ${wheel_length/2} 0" rpy="1.57 0 0" />
+            <geometry>
+                <cylinder length="${wheel_length}" radius="${wheel_radius}" />
+            </geometry>
+        </collision>
+        
+        <xacro:cylinder_inertial_matrix  m="${wheel_mass}" r="${wheel_radius}" h="${wheel_length}"/>
+
+
+    </link>
+
+    <joint name="hinten_left_wheel" type="continuous">
+        <parent link="base_link"/>
+        <child link="hinten_left_wheel_link"/>
+        <origin xyz="${-wheelbase/2} ${track/2} ${wheel_vertical_offset}" rpy="0 0 0" />
+        <axis xyz="0 1 0"/>
+    </joint>
+
+    <link name="hinten_right_wheel_link">
+        <!--        <inertial>-->
+        <!--            <origin xyz="0 0 0" />-->
+        <!--            <mass value="0.5" />-->
+        <!--            <inertia ixx="0.01055" ixy="0" ixz="0" iyy="0.00075" iyz="0" izz="0.01055" /> -->
+        <!--        </inertial>-->
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <mesh filename="model://limo_ackermann/meshes/limo_wheel.dae" />
+            </geometry>
+        </visual>
+        <collision>
+            <origin xyz="0 ${wheel_length/2} 0" rpy="1.57 0 0" />
+            <geometry>
+                <cylinder length="${wheel_length}" radius="${wheel_radius}" />
+            </geometry>
+        </collision>
+        <xacro:cylinder_inertial_matrix  m="${wheel_mass}" r="${wheel_radius}" h="${wheel_length}"/>
+    </link>
+
+    <joint name="hinten_right_wheel" type="continuous">
+        <parent link="base_link"/>
+        <child link="hinten_right_wheel_link"/>
+        <origin xyz="${-wheelbase/2} ${-track/2} ${wheel_vertical_offset}" rpy="${M_PI} 0 0" />
+        <axis xyz="0 -1 0"/>
+    </joint>
+
+
+    <!-- appelle la charnière de direction avec les roues avant -->
+    <xacro:limo_left_steering_hinge parent_prefix="base_link" wheel_prefix="left_steering_hinge">
+        <origin xyz="${wheelbase/2} ${track/2} ${wheel_vertical_offset}" rpy="0 0 0" />
+    </xacro:limo_left_steering_hinge>
+
+    <xacro:limo_right_steering_hinge parent_prefix="base_link" wheel_prefix="right_steering_hinge">
+        <origin xyz="${wheelbase/2} ${-track/2} ${wheel_vertical_offset}" rpy="${M_PI} 0 0" />
+    </xacro:limo_right_steering_hinge>
+</robot>

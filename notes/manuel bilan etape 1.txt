@@ -1,0 +1,65 @@
+1 - enlever le git :
+ rm -rf .git/modules/src/limo_ros2 .git/modules/src/keyboard_teleop .git/modules/src/pynput_teleop_twist_keyboard 2>/dev/null || true
+
+2 - dans /limo_ros2/limo_car/gazebo/ackermann_with_sensor.xacro ; inclure plutot /urdf/limo_ackerman_base.xacro , car description urdf pure du robot sans plugins gazebo classiques
+
+3 - dans /gazebo/sensor.xacro ; convertir tous les plugins gazebo classic par leur équivalent en gazebo sim
+
+4 - dans /urdf/limo_ackerman_base.xacro ; supprimer la fixation des capteurs ( camera, imu, laser ) sur le base_link, pour éviter la repétion dans /gazebo/ackermann_with_sensor.xacro
+
+5 - Créer un modèle de robot gazebo classique* dans un chemin de son choix
+
+6 - dans toutes les définitions de meshes ( dans /urdf/limo_ackerman_base.xacro et dans limo_steering_hinge.xacro ; utiliser plutot <mesh filename="model://nom_du_model_du_robot/meshes/limo_wheel.dae" /> pour pointer directement vers le modèle de robot créé
+
+7 - générer l'urf du robot grace à xacro à partir de /gazebo/ackermann_with_sensor.xacro : 
+
+xacro -o /home/nochi-billy/NOCHI/Projets_Robotique/limo_ws/src/Autonomous-Vision-driven-LIMO/src/limo_project/robot_description/limo.urdf /home/nochi-billy/NOCHI/Projets_Robotique/limo_ws/src/Autonomous-Vision-driven-LIMO/src/limo_ros2/limo_car/gazebo/ackermann_with_sensor.xacro
+
+
+8 - générer le sdf du robot à partir de son urdf grace à gz et le stocker dans le modèle du robot créé précédement :
+
+gz sdf -p /home/nochi-billy/NOCHI/Projets_Robotique/limo_ws/src/Autonomous-Vision-driven-LIMO/src/limo_project/robot_description/limo.urdf > /home/nochi-billy/NOCHI/Projets_Robotique/limo_ws/src/Autonomous-Vision-driven-LIMO/src/limo_project/limo_ackermann/model.sdf
+
+9 - Définir le robot dans la variable d'environnement gazebo : 
+
+export GZ_SIM_RESOURCE_PATH=$HOME/NOCHI/Projets_Robotique/limo_ws/src/Autonomous-Vision-driven-LIMO/src/limo_project:$GZ_SIM_RESOURCE_PATH
+
+
+10 - spawner le robot grace à son modèle :
+
+gz sim spawn /home/nochi-billy/NOCHI/Projets_Robotique/limo_ws/src/Autonomous-Vision-driven-LIMO/src/limo_project/limo_ackermann/model.sdf
+
+11 - insérer le plugin ackerman manuellement dans le model.sdf: 
+
+    <plugin filename="gz-sim-ackermann-steering-system"
+            name="gz::sim::systems::AckermannSteering">
+
+      <!-- Joints propulsion arrière -->
+      <left_joint>hinten_left_wheel</left_joint>
+      <right_joint>hinten_right_wheel</right_joint>
+
+      <!-- Joints direction avant -->
+      <left_steering_joint>left_steering_hinge_wheel</left_steering_joint>
+      <right_steering_joint>right_steering_hinge_wheel</right_steering_joint>
+
+      <!-- Paramètres géométriques -->
+      <wheel_radius>0.045</wheel_radius>
+      <wheel_base>0.20</wheel_base>
+      <wheel_separation>0.14</wheel_separation>
+      <steering_limit>0.6</steering_limit>
+
+      <!-- Frames -->
+      <frame_id>odom</frame_id>
+      <child_frame_id>base_footprint</child_frame_id>
+    </plugin>
+
+
+
+
+*****************************************************************************************************************************
+NOUVEAU PROCEDE
+*****************************************************************************************************************************
+
+- J'ai inclus cette fois /gazebo/ackermann.xacro ( macros xacro du chassis du robot contenant les plugins gazebo de commande ackerman que j'ai converti en plugins gazebo sim grace à chat gpt)  dans ackermann_with_sensor.xacro
+
+- Faut bien sur pas oublier à lancer la simu à chaque fois 

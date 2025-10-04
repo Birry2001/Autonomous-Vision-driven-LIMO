@@ -46,7 +46,7 @@ um die Erstellung von Steuerscharnier des Wagens zu ermöglichen. Durch Macrofun
             <visual>
                 <origin xyz="0 0 0" rpy="0 0 0" />
                 <geometry>
-                    <mesh filename="package://limo_car/meshes/limo_wheel.dae" />
+                    <mesh filename="model://limo_ackermann/meshes/limo_wheel.dae" />
                 </geometry>
             </visual>
             <collision>
@@ -105,7 +105,7 @@ um die Erstellung von Steuerscharnier des Wagens zu ermöglichen. Durch Macrofun
             <visual>
                 <origin xyz="0 0 0" rpy="0 0 0" />
                 <geometry>
-                    <mesh filename="package://limo_car/meshes/limo_wheel.dae" />
+                    <mesh filename="model://limo_ackermann/meshes/limo_wheel.dae" />
                 </geometry>
             </visual>
             <collision>

@@ -1,0 +1,9 @@
+Bon, on est en mode apprentissage et tu vas me former sur Gazebo ( gz sim la nouvelle version ) et les liens avec ROS2. En effet, je suis entrain de commencer un projet de robotique qui consiste à élaborer un système de navigation autonome pour un robot limo agilex à partir de fusion de capteurs ( lidar et camera ) et d'un réseau de neurones pour la détection d'obstacles. Bien entendu je dois commencer par valider le projet en mode simulation avant de passer aux tests irl.  Actuellement je suis au tout début du projet, donc je suis entrain de mettre en place l'environnement de simulation ( gazebo actuellement, peut etre rviz plus tard ). J'ai cloné le dépot d'agilex dédié au robot, ce dernier contenant la description du robot.
+
+
+
+**Connaitre la version ROS2 : echo $ROS_DISTRO
+
+
+
+

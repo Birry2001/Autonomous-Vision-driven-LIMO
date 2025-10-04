@@ -1,0 +1,1 @@
+Cette archive contient la description d'un robot limo. J'ai enlevé les meshes car trop lourds. Je compte spawner ce robot entier ( base ackermann + cpateurs ) sur gazbo sim. Est il possible de le faire uniquement en convertissant en sdf limo_ackerman_base.xacro ? Sinon pourquoi ?

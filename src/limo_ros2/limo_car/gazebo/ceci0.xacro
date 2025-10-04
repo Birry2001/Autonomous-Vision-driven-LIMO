@@ -1,0 +1,84 @@
+# Auteur : Zhui Li
+# E-Mail : lz554113510@gmail.com
+# Entreprise : Institut für Intermodale Transport- und Logistiksysteme, Université Technique de Brunswick
+# Description : Ce fichier .py est basé sur des règles et définit des fonctions en Python
+# afin de permettre le lancement de la simulation dans Gazebo. Ensuite, avec la simulation
+# dans Gazebo, on peut poursuivre les travaux de recherche. Ce fichier de lancement est destiné
+# au type Ackermann.
+
+import os
+
+from ament_index_python.packages import get_package_share_directory
+
+from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument
+from launch.actions import IncludeLaunchDescription
+from launch.substitutions import LaunchConfiguration
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+
+from launch_ros.actions import Node
+
+
+def generate_launch_description():
+
+    # définit le chemin vers le modèle
+    package_name = 'limo_car'
+    world_file_path = 'worlds/empty_world.model'
+    rviz_path = 'rviz/gazebo.rviz'
+
+    pkg_path = os.path.join(get_package_share_directory(package_name))
+    world_path = os.path.join(pkg_path, world_file_path)
+    default_rviz_config_path = os.path.join(pkg_path, rviz_path)
+
+    rviz_arg = DeclareLaunchArgument(
+        name='rvizconfig',
+        default_value=str(default_rviz_config_path),
+        description='Chemin absolu vers le fichier de configuration RViz'
+    )
+    rviz_node = Node(
+        package='rviz2',
+        executable='rviz2',
+        name='rviz2',
+        output='screen',
+        arguments=['-d', LaunchConfiguration('rvizconfig')],
+    )
+
+    # position de génération du modèle
+    spawn_x_val = '0.0'
+    spawn_y_val = '0.0'
+    spawn_z_val = '0.0'
+    spawn_yaw_val = '0.0'
+
+    mbot = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource([os.path.join(
+            get_package_share_directory(package_name), 'launch', 'ackermann.launch.py'
+        )]),
+        launch_arguments={'use_sim_time': 'true', 'world': world_path}.items()
+    )
+
+    # inclusion du fichier de lancement de Gazebo fourni par le paquet gazebo_ros
+    gazebo = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource([os.path.join(
+            get_package_share_directory('gazebo_ros'), 'launch', 'gazebo.launch.py')]),
+    )
+
+    # lance un nœud de base à partir du package gazebo_ros pour générer l’entité
+    spawn_entity = Node(
+        package='gazebo_ros',
+        executable='spawn_entity.py',
+        arguments=['-topic', 'robot_description',
+                   '-entity', 'mbot',
+                   '-x', spawn_x_val,
+                   '-y', spawn_y_val,
+                   '-z', spawn_z_val,
+                   '-Y', spawn_yaw_val],
+        output='screen'
+    )
+
+    return LaunchDescription([
+        mbot,
+        gazebo,
+        spawn_entity,
+        rviz_arg,
+        rviz_node
+    ])
